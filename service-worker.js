@@ -1,5 +1,5 @@
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open('rutina-cache').then(cache => 
+  e.waitUntil(caches.open('rutina-cache').then(cache =>
     cache.addAll(['./', './index.html', './manifest.json', './style.css'])
   ));
 });

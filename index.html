@@ -14,11 +14,17 @@
     <button id="resetBtn">Reiniciar</button>
   </header>
   <section class="section">
+    <h2 id="weekInfo">Semana 1 - Peso sugerido: 20kg</h2>
+    <div class="calendar" id="calendar"></div>
     <label>Progreso: <span id="progressText">0%</span></label>
     <progress id="progressBar" value="0" max="100"></progress>
   </section>
   <div id="app"></div>
   <script>
+    const START_WEIGHT = 20;
+    const INCREMENT_PER_WEEK = 5;
+    const TOTAL_WEEKS = 24;
+
     const routine = {
       "Lunes": ["Press de pecho (3x12)", "Elevaciones laterales (2x15)", "Fondos en banco (2x12)", "Plancha abdominal (3x30s)", "Vóley"],
       "Martes": ["Sentadilla libre (3x12)", "Peso muerto rumano (3x15)", "Hip thrust (2x15)", "Crunch (3x15)", "Stretching", "Yoga"],
@@ -30,12 +36,41 @@
     };
 
     const STORAGE_KEY = 'rutinaChecked';
+    const START_KEY = 'rutinaStart';
+
     function getChecked() {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     }
     function setChecked(obj) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
     }
+
+    function calculateWeekAndWeight() {
+      let start = localStorage.getItem(START_KEY);
+      if (!start) {
+        start = new Date().toISOString();
+        localStorage.setItem(START_KEY, start);
+      }
+      const startDate = new Date(start);
+      const now = new Date();
+      const diffMs = now - startDate;
+      const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7)) + 1;
+      const wk = Math.min(diffWeeks, TOTAL_WEEKS);
+      const wt = START_WEIGHT + (wk - 1) * INCREMENT_PER_WEEK;
+      return { wk, wt };
+    }
+
+    function buildCalendar(currentWeek) {
+      const cal = document.getElementById('calendar');
+      cal.innerHTML = '';
+      for (let i = 1; i <= TOTAL_WEEKS; i++) {
+        const div = document.createElement('div');
+        div.innerHTML = '<strong>S' + i + '</strong><br>' + (START_WEIGHT + (i-1)*INCREMENT_PER_WEEK) + 'kg';
+        if (i === currentWeek) div.classList.add('current');
+        cal.appendChild(div);
+      }
+    }
+
     function updateProgress() {
       const checked = getChecked();
       const total = Object.values(routine).flat().length;
@@ -81,6 +116,7 @@
 
     document.getElementById('resetBtn').onclick = () => {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(START_KEY);
       location.reload();
     };
 
@@ -88,6 +124,9 @@
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js');
       }
+      const { wk, wt } = calculateWeekAndWeight();
+      document.getElementById('weekInfo').innerText = 'Semana ' + wk + ' - Peso sugerido: ' + wt + 'kg';
+      buildCalendar(wk);
       buildApp();
     });
   </script>
