@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  <title>Rutina Jessica</title>
+</head>
+<body>
+  <header>
+    <h1>Rutina Semanal</h1>
+    <button id="resetBtn">Reiniciar</button>
+  </header>
+  <section class="section">
+    <label>Progreso: <span id="progressText">0%</span></label>
+    <progress id="progressBar" value="0" max="100"></progress>
+  </section>
+  <div id="app"></div>
+  <script>
+    const routine = {
+      "Lunes": ["Press de pecho (3x12)", "Elevaciones laterales (2x15)", "Fondos en banco (2x12)", "Plancha abdominal (3x30s)", "Vóley"],
+      "Martes": ["Sentadilla libre (3x12)", "Peso muerto rumano (3x15)", "Hip thrust (2x15)", "Crunch (3x15)", "Stretching", "Yoga"],
+      "Miércoles": ["Circuito funcional (2 rondas)", "Plancha lateral (2x20s)", "Calistenia", "Vóley"],
+      "Jueves": ["Jalón al pecho (3x12)", "Remo mancuerna (3x12)", "Curl bíceps (2x15)", "Elevaciones piernas (3x12)", "Stretching", "Yoga"],
+      "Viernes": ["Prensa (3x15)", "Curl femoral (3x12)", "Abducción cadera (2x15)", "Pallof press (2x12)", "Vóley"],
+      "Sábado": ["Sentadilla goblet (2x15)", "Press hombros (2x15)", "Face-pull (2x15)", "Plancha lateral + rotación (2x10)", "Movilidad"],
+      "Domingo": ["Cardio suave (30 min)", "Estiramientos"]
+    };
+
+    const STORAGE_KEY = 'rutinaChecked';
+    function getChecked() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    }
+    function setChecked(obj) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+    }
+    function updateProgress() {
+      const checked = getChecked();
+      const total = Object.values(routine).flat().length;
+      const done = Object.values(checked).filter(v => v).length;
+      const percent = Math.round((done/total)*100);
+      document.getElementById('progressText').innerText = percent + '%';
+      document.getElementById('progressBar').value = percent;
+    }
+
+    function buildApp() {
+      const app = document.getElementById('app');
+      const checked = getChecked();
+      Object.keys(routine).forEach(day => {
+        const sec = document.createElement('section');
+        sec.className = 'section';
+        const h2 = document.createElement('h2');
+        h2.innerText = day;
+        sec.appendChild(h2);
+        const ul = document.createElement('ul');
+        routine[day].forEach((item, idx) => {
+          const li = document.createElement('li');
+          const key = day + '-' + idx;
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = checked[key] || false;
+          cb.onchange = () => {
+            checked[key] = cb.checked;
+            setChecked(checked);
+            updateProgress();
+          };
+          const span = document.createElement('span');
+          span.style.marginLeft = '8px';
+          span.innerText = item;
+          li.appendChild(cb);
+          li.appendChild(span);
+          ul.appendChild(li);
+        });
+        sec.appendChild(ul);
+        app.appendChild(sec);
+      });
+      updateProgress();
+    }
+
+    document.getElementById('resetBtn').onclick = () => {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    };
+
+    window.addEventListener('load', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js');
+      }
+      buildApp();
+    });
+  </script>
+</body>
+</html>
